@@ -16,7 +16,7 @@
     "docs:assets": "cp node_modules/prismjs/themes/prism-okaidia.css docs/",
     "docs:serve": "es-dev-server --root-dir=docs --node-resolve --watch",
     "analyze": "wca analyze \"**/*.js\" --outFile custom-elements.json",
-    "serve": "es-dev-server --node-resolve --watch",
+    "serve": "es-dev-server --hostname 0.0.0.0 --node-resolve --watch",
     "test": "karma start karma.conf.cjs",
     "test:watch": "karma start karma.conf.cjs --auto-watch=true --single-run=false",
     "test:update-snapshots": "karma start karma.conf.cjs --update-snapshots",
@@ -32,6 +32,8 @@
   "author": "The Polymer Authors",
   "license": "BSD-3-Clause",
   "dependencies": {
+    "@polymer/iron-autogrow-textarea": "^3.0.3",
+    "@vaadin/vaadin-split-layout": "^4.3.0",
     "lit-element": "^2.3.1"
   },
   "devDependencies": {
