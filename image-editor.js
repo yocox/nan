@@ -73,6 +73,12 @@ export class ImageEditor extends LitElement {
         background-color: #f0f0f0;
         scrollbar-width: 0px;
       }
+      .cell-idx {
+        user-select: none;
+      }
+      .drop-hover {
+        background-color: rgba(127, 0, 0, 0.4);
+      }
       .thead {
         border-radius: 3px;
         background-color: lightgray;
@@ -94,6 +100,7 @@ export class ImageEditor extends LitElement {
       /**
        * The name to say "Hello" to.
        */
+      page_num: {type: Number},
       img_src: {type: String},
       items: {type: Array, attribute: false},
       _hovered_idx: {type: Number},
@@ -179,12 +186,58 @@ export class ImageEditor extends LitElement {
     label.scrollIntoView({behavior: "smooth", block: "start", inline: "nearest"})
   }
 
+  _on_text_dragstart(e) {
+    e.dataTransfer.setData('srcIdx', e.target.dataset.idx);
+  }
+
+  _on_text_drop(e) {
+    const srcIdx = e.dataTransfer.getData('srcIdx');
+    const tarIdx = e.target.dataset.idx;
+    console.log(`drop ${srcIdx} -> ${tarIdx}`);
+    this._move(Number(srcIdx), Number(tarIdx));
+  }
+
+  _on_text_dragenter(e) {
+
+  }
+
+  _move(sourceIdx, targetIdx) {
+    if (sourceIdx == targetIdx) {
+      return;
+    }
+
+    // move down
+    if (sourceIdx < targetIdx) {
+      const item = this.items[sourceIdx];
+      const pre  = this.items.slice(0, sourceIdx);
+      const mid  = this.items.slice(sourceIdx + 1, targetIdx + 1);
+      const post = this.items.slice(targetIdx + 1)
+      const newItems = new Array();
+      newItems.push(...pre, ...mid, item, ...post);
+      this.items = newItems;
+    } else {
+      const item = this.items[sourceIdx];
+      const pre  = this.items.slice(0, targetIdx);
+      const mid  = this.items.slice(targetIdx, sourceIdx);
+      const post = this.items.slice(sourceIdx + 1)
+      const newItems = new Array();
+      newItems.push(...pre, item, ...mid, ...post);
+      this.items = newItems;
+    }
+  }
+
+  _on_text_dragover(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
   render() {
     return html`
-      <h1>Image Editor Web Component! ${this.items.length}</h1>
+      <h1>Page ${this.page_num}, ${this.items.length} texts</h1>
       <vaadin-split-layout class="editor" @iron-resize=${this._update_labels_size}>
         <div id="im-side" class="im-side">
           <img id="im" class="im" src="${this.img_src}" @load=${this._on_image_load}>
+          <!-- Labels -->
           <div id="labels" class="labels" @click="${this._on_click_image}">
             ${
               this.items.map((e, idx) => html`
@@ -201,6 +254,7 @@ export class ImageEditor extends LitElement {
             }
           </div>
         </div>
+        <!-- Tables -->
         <div class="tb-side">
           <div id="grid" class="grid">
             <div class="cell thead">ID</div>
@@ -208,8 +262,22 @@ export class ImageEditor extends LitElement {
             <div class="cell thead">註解</div>
             ${
               this.items.map((e, idx) => html`
-                <label class="cell">${idx + 1}</label>
-                <div class=${"cell" + (this._hovered_idx == idx ? " hovered-label" : "")} @mouseover=${this._on_mouseover_item} @mouseout=${this._on_mouseout_item}>
+                <label
+                  class=${"cell cell-idx" + (this._hovered_idx == idx ? " hovered-label" : "")}
+                  @mouseover=${this._on_mouseover_item}
+                  @mouseout=${this._on_mouseout_item}
+                  @dragstart=${this._on_text_dragstart}
+                  @dragover=${this._on_text_dragover}
+                  @drop=${this._on_text_drop}
+                  data-idx=${idx}
+                  draggable="true"
+                >${idx + 1}</label>
+                <div 
+                  class=${"cell" + (this._hovered_idx == idx ? " hovered-label" : "")}
+                  @mouseover=${this._on_mouseover_item}
+                  @mouseout=${this._on_mouseout_item}
+                  data-idx=${idx}
+                >
                   <iron-autogrow-textarea 
                     data-idx=${idx}
                     data-column='text' 
@@ -220,7 +288,12 @@ export class ImageEditor extends LitElement {
                   >
                   </iron-autogrow-textarea>
                 </div>
-                <div class="cell">
+                <div
+                  class=${"cell" + (this._hovered_idx == idx ? " hovered-label" : "")}
+                  @mouseover=${this._on_mouseover_item}
+                  @mouseout=${this._on_mouseout_item}
+                  data-idx=${idx}
+                >
                   <iron-autogrow-textarea data-idx=${idx} data-column='comment' class="tarea" value="${e.comment}" @value-changed=${this._on_text_change}></iron-autogrow-textarea>
                 </div>
               `)
